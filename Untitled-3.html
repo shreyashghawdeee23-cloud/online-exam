@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Online Examination Portal</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{
+  font-family:Segoe UI,Arial;
+  background:#f4f6f8;
+  margin:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card{
+  width:750px;
+  background:#fff;
+  padding:35px;
+  border:3px solid #000;
+  border-radius:12px;
+  box-shadow:0 15px 35px rgba(0,0,0,0.15);
+}
+h1{text-align:center;margin:0;color:#0a2a43}
+p{text-align:center;color:#555}
+
+input{
+  width:100%;
+  padding:10px;
+  margin:10px 0;
+  font-size:15px;
+}
+button{
+  padding:12px 40px;
+  background:#000;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+button:hover{background:#333}
+
+.hidden{display:none}
+
+/* progress */
+.progress{
+  height:10px;
+  background:#ddd;
+  border-radius:6px;
+  overflow:hidden;
+  margin-bottom:15px;
+}
+.progress div{
+  height:100%;
+  width:0%;
+  background:#000;
+}
+
+/* options */
+.options label{
+  display:block;
+  margin:10px 0;
+  font-size:16px;
+}
+.center{text-align:center}
+.timer{font-weight:bold;text-align:right}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<!-- STUDENT INFO -->
+<div id="info">
+  <h1>Online Examination Portal</h1>
+  <p>Enter details to begin exam</p>
+
+  <input id="studentName" placeholder="Student Name">
+  <input id="rollNumber" placeholder="Roll Number">
+
+  <div class="center">
+    <button onclick="startExam()">Start Exam</button>
+  </div>
+</div>
+
+<!-- EXAM -->
+<div id="exam" class="hidden">
+  <div class="timer">Time Left: <span id="time">60</span>s</div>
+
+  <div class="progress"><div id="bar"></div></div>
+
+  <h3 id="question"></h3>
+
+  <div class="options" id="options"></div>
+
+  <div class="center">
+    <button onclick="nextQ()">Next</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="result" class="hidden center">
+  <h2>Exam Completed</h2>
+  <p id="scoreText"></p>
+  <button onclick="downloadCertificate()">Download Certificate</button>
+</div>
+
+</div>
+
+<script>
+const questions=[
+ {q:"What is 2 + 2 ?",o:["3","4","5"],a:1},
+ {q:"HTML stands for?",o:["Hyper Text Markup Language","High Text","Home Tool"],a:0},
+ {q:"JS is used for?",o:["Styling","Logic","Database"],a:1}
+];
+
+let i=0,score=0,time=60,timer;
+let sName="",roll="";
+
+function startExam(){
+  sName=document.getElementById("studentName").value.trim();
+  roll=document.getElementById("rollNumber").value.trim();
+
+  if(sName==""||roll==""){
+    alert("Please fill all details");
+    return;
+  }
+
+  document.getElementById("info").classList.add("hidden");
+  document.getElementById("exam").classList.remove("hidden");
+
+  loadQ();
+  timer=setInterval(()=>{
+    time--;
+    document.getElementById("time").innerText=time;
+    if(time<=0) endExam();
+  },1000);
+}
+
+function loadQ(){
+  let q=questions[i];
+  document.getElementById("question").innerText=q.q;
+  let html="";
+  q.o.forEach((opt,idx)=>{
+    html+=`<label><input type="radio" name="opt" value="${idx}"> ${opt}</label>`;
+  });
+  document.getElementById("options").innerHTML=html;
+  document.getElementById("bar").style.width=((i)/questions.length*100)+"%";
+}
+
+function nextQ(){
+  let sel=document.querySelector('input[name="opt"]:checked');
+  if(!sel){alert("Select option");return;}
+  if(parseInt(sel.value)==questions[i].a) score++;
+  i++;
+  if(i<questions.length) loadQ();
+  else endExam();
+}
+
+function endExam(){
+  clearInterval(timer);
+  document.getElementById("exam").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+  document.getElementById("scoreText").innerText=
+    `Score: ${score}/${questions.length}`;
+}
+
+function downloadCertificate(){
+  const { jsPDF } = window.jspdf;
+  const pdf=new jsPDF("landscape");
+
+  pdf.setDrawColor(180,150,80);
+  pdf.setLineWidth(2);
+  pdf.rect(10,10,277,190);
+
+  pdf.setFont("Times","Bold");
+  pdf.setFontSize(20);
+  pdf.text("S. B. Jain Institute of Technology, Nagpur",148,35,{align:"center"});
+
+  pdf.setFontSize(26);
+  pdf.text("CERTIFICATE OF ACHIEVEMENT",148,80,{align:"center"});
+
+  pdf.setFontSize(16);
+  pdf.text("This is to certify that",148,100,{align:"center"});
+
+  pdf.setFontSize(22);
+  pdf.text(sName,148,120,{align:"center"});
+
+  pdf.setFontSize(16);
+  pdf.text(`has successfully completed the examination.`,148,140,{align:"center"});
+  pdf.text(`Grade : ${score>=2?"A":"B"}`,148,160,{align:"center"});
+
+  pdf.save("Certificate.pdf");
+}
+</script>
+
+</body>
+</html>
